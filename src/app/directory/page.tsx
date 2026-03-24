@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { Suspense, useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Nav } from '@/components/layout/Nav';
 import { Footer } from '@/components/layout/Footer';
@@ -15,7 +15,7 @@ import { CategoryIcon, SearchIcon } from '@/components/ui/Icons';
 
 const PAGE_SIZE = 9;
 
-export default function DirectoryPage() {
+function DirectoryPageContent() {
   const searchParams            = useSearchParams();
   const { bookmarks, toggle }   = useBookmarks();
   const { message, toast }      = useToast();
@@ -231,5 +231,13 @@ export default function DirectoryPage() {
       <Footer />
       {message && <Toast message={message} onDone={() => {}} />}
     </>
+  );
+}
+
+export default function DirectoryPage() {
+  return (
+    <Suspense fallback={null}>
+      <DirectoryPageContent />
+    </Suspense>
   );
 }

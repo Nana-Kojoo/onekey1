@@ -34,6 +34,21 @@ interface SandboxResult {
   truncated: boolean;
 }
 
+function isSandboxResult(value: unknown): value is SandboxResult {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Partial<SandboxResult>;
+  return (
+    typeof candidate.ok === 'boolean' &&
+    typeof candidate.status === 'number' &&
+    typeof candidate.statusText === 'string' &&
+    typeof candidate.durationMs === 'number' &&
+    typeof candidate.body === 'string' &&
+    typeof candidate.truncated === 'boolean' &&
+    !!candidate.headers &&
+    typeof candidate.headers === 'object'
+  );
+}
+
 function extractExampleRequest(code: string) {
   const url = code.match(/https?:\/\/[^\s"'`\\]+/)?.[0] ?? '';
 
@@ -303,8 +318,11 @@ If an error is provided, prioritize fixing that error with minimal necessary edi
         payload = JSON.parse(raw) as SandboxResult | { error?: string };
       } catch {}
 
-      if (!res.ok || 'error' in payload) {
-        const message = 'error' in payload ? (payload.error || 'Sandbox request failed.') : 'Sandbox request failed.';
+      if (!res.ok || !isSandboxResult(payload)) {
+        const message =
+          payload && typeof payload === 'object' && 'error' in payload && typeof payload.error === 'string'
+            ? payload.error
+            : 'Sandbox request failed.';
         addSandboxLog(`Run failed: ${message}`);
         return;
       }
@@ -366,7 +384,7 @@ If an error is provided, prioritize fixing that error with minimal necessary edi
           </button>
           <button
             className="ai-mini-btn"
-            onClick={run}
+            onClick={() => run()}
             disabled={streaming || !task.trim()}
             type="button"
           >
@@ -391,7 +409,7 @@ If an error is provided, prioritize fixing that error with minimal necessary edi
             onKeyDown={(e) => { if (e.key === 'Enter') run(); }}
             placeholder={`Describe what to build with ${api.name}…`}
           />
-          <button className="ai-run-btn" onClick={run} disabled={streaming || !task.trim()}>
+          <button className="ai-run-btn" onClick={() => run()} disabled={streaming || !task.trim()}>
             {streaming ? 'Generating…' : '▶ Generate'}
           </button>
         </div>
